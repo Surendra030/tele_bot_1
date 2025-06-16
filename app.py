@@ -1,57 +1,51 @@
-
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import requests, json
-from pymongo import MongoClient
-from datetime import datetime
-import pytz,os
+import os
+import json
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-mongo_url = os.getenv("MONGO_URL")
-# MongoDB connection
-client = MongoClient(mongo_url)
-db = client['STORING_KEYS']
-collection = db['tele_bot_1']
+CORS(app)
 
-# Get bot credentials
-document = collection.find_one({'TELEGRAM_BOT_UNAME': 'user_info_b_1_bot'})
-TELEGRAM_BOT_TOKEN = document['TELEGRAM_BOT_TOKEN']
-TELEGRAM_CHAT_ID = document['TELEGRAM_CHAT_ID']
+DATA_FILE = 'data_store.json'
 
-# Function to send message to Telegram
-def send_telegram_message(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        'chat_id': TELEGRAM_CHAT_ID,
-        'text': message
-    }
-    requests.post(url, data=payload)
+# Ensure the file exists
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, 'w') as f:
+        json.dump([], f)
 
-@app.route("/", methods=['GET'])
-def home_route():
-    return "The Backend working fine"
-
-@app.route('/testing-stage-url', methods=['GET'])
-def notify_telegram():
-    ip = request.remote_addr
-    send_telegram_message(f"🔔 Webhook triggered from IP: {ip}")
-    return "You have triggered a notification to Telegram!"
-
-@app.route('/report-error', methods=['POST'])
-def report_error():
+@app.route('/save-url', methods=['POST'])
+def save_url():
     data = request.get_json()
-    error_msg = data.get('error', '❗ Error field missing in payload')
+    url = data.get('url')
+    timestamp = data.get('time_stamp')
 
-    # Get current time in IST
-    india_tz = pytz.timezone('Asia/Kolkata')
-    current_time = datetime.now(india_tz).strftime('%Y-%m-%d %H:%M:%S')
+    if not url or not timestamp:
+        return {"error": "Missing 'url' or 'time_stamp' in request"}, 400
 
-    # Format and send message
-    message = f"🚨 Error Reported:\n{error_msg}\n🕒 Time (IST): {current_time}"
-    send_telegram_message(message)
+    entry = {
+        "url": url,
+        "time_stamp": timestamp
+    }
 
-    return {"status": "sent", "message": error_msg, "timestamp": current_time}, 200
+    try:
+        with open(DATA_FILE, 'r+') as f:
+            existing_data = json.load(f)
+            existing_data.append(entry)
+            f.seek(0)
+            json.dump(existing_data, f, indent=4)
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+    return {"status": "success", "message": "Data saved"}, 200
+
+@app.route('/get-urls', methods=['GET'])
+def get_urls():
+    try:
+        with open(DATA_FILE, 'r') as f:
+            data = json.load(f)
+            return jsonify(data)
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
