@@ -30,7 +30,7 @@ def save_url():
 
 @app.route('/get-urls', methods=['GET'])
 def get_urls():
-    return jsonify(data_store), 200
+    return jsonify(list(data_store[-1)), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
