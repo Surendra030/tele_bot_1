@@ -13,6 +13,11 @@ if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, 'w') as f:
         json.dump([], f)
 
+@app.route('/', methods=['GET'])
+def home():
+    return {"message": "Backend Server Working.."}, 200
+
+    
 @app.route('/save-url', methods=['POST'])
 def save_url():
     data = request.get_json()
