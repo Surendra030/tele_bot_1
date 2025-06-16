@@ -24,7 +24,7 @@ def save_url():
         "url": url,
         "time_stamp": timestamp
     }
-
+    data = []
     data_store.append(entry)
     return {"status": "success", "message": "Data saved"}, 200
 
