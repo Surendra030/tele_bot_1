@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -25,15 +24,16 @@ def save_url():
         "url": url,
         "time_stamp": timestamp
     }
+
     data_store.append(entry)
     return {"status": "success", "message": "Data saved"}, 200
 
 @app.route('/get-urls', methods=['GET'])
 def get_urls():
-    obj = [data_store[-1]]
-    return jsonify(obj), 200
+    if data_store:
+        return jsonify(data_store[-1]), 200
+    else:
+        return jsonify({"message": "No data found"}), 200
 
-def get_url_lst():
-    return jsonify(data_store), 200
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
