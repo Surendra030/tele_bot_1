@@ -25,14 +25,15 @@ def save_url():
         "url": url,
         "time_stamp": timestamp
     }
-    data = []
     data_store.append(entry)
     return {"status": "success", "message": "Data saved"}, 200
 
 @app.route('/get-urls', methods=['GET'])
 def get_urls():
-    obj = [data_store[-1]
+    obj = [data_store[-1]]
     return jsonify(obj), 200
 
+def get_url_lst():
+    return jsonify(data_store), 200
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
